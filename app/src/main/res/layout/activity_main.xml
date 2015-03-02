@@ -1,0 +1,27 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Linterna On"
+        android:id="@+id/linterna_on"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:onClick="turn_On_flash"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Linterna Off"
+        android:id="@+id/linterna_off"
+        android:layout_below="@+id/linterna_on"
+        android:layout_alignLeft="@+id/linterna_on"
+        android:layout_alignStart="@+id/linterna_on"
+        android:onClick="turn_Off_flash"/>
+</RelativeLayout>
