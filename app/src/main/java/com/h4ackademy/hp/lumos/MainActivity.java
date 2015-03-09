@@ -1,7 +1,10 @@
 package com.h4ackademy.hp.lumos;
 
+import android.content.Context;
 import android.content.Intent;
 import android.hardware.Camera;
+import android.media.AudioManager;
+import android.os.Handler;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -21,9 +24,13 @@ public class MainActivity extends ActionBarActivity {
 
     private Camera cam;
     private Parameters p;
+    private boolean isFlashOn;
 
     private TextView mText;
     private SpeechRecognizer sr;
+    private Intent intent;
+    private AudioManager mAudioManager;
+    private int mStreamVolume = 0;
     private static final String TAG = "MyStt3Activity";
 
     @Override
@@ -37,6 +44,15 @@ public class MainActivity extends ActionBarActivity {
         sr = SpeechRecognizer.createSpeechRecognizer(this);
         sr.setRecognitionListener(new Listener());
 
+        intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,"voice.recognition.test");
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5);
+        sr.startListening(intent);
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        mStreamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
+
         speakButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -44,7 +60,7 @@ public class MainActivity extends ActionBarActivity {
                     Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
                     intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
                     intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,"voice.recognition.test");
-                    intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,5);
+                    intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,7);
                     sr.startListening(intent);
                 }
             }
@@ -53,16 +69,25 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void turnOnFlash(View v){
-        cam = Camera.open();
-        p = cam.getParameters();
-        p.setFlashMode(Parameters.FLASH_MODE_TORCH);
-        cam.setParameters(p);
-        cam.startPreview();
+        if(!isFlashOn) {
+            cam = Camera.open();
+            p = cam.getParameters();
+            p.setFlashMode(Parameters.FLASH_MODE_TORCH);
+            cam.setParameters(p);
+            cam.startPreview();
+            isFlashOn = true;
+        }
     }
 
     public void turnOffFlash(View v){
-        cam.stopPreview();
-        cam.release();
+        if(isFlashOn) {
+            if (cam == null) {
+                cam = Camera.open();
+            }
+            cam.stopPreview();
+            cam.release();
+            isFlashOn = false;
+        }
     }
 
     @Override
@@ -87,8 +112,42 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    class Listener implements RecognitionListener
-    {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AppStatus.activityResumed();
+        sr.startListening(intent);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
+    }
+
+    @Override
+    protected void onPause() {
+        AppStatus.activityPaused();
+        sr.stopListening();
+        super.onPause();
+        Log.d(TAG,  "event onPause");
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mStreamVolume, 0);
+            }
+        }, 300);
+
+    }
+
+    @Override
+    public void onDestroy() {
+        if(sr != null) {
+            sr.cancel();
+            sr.destroy();
+            sr = null;
+        }
+        turnOffFlash(mText);
+        super.onDestroy();
+        Log.d(TAG,  "event onDestroy");
+    }
+
+    class Listener implements RecognitionListener {
         public void onReadyForSpeech(Bundle params) {
             Log.d(TAG, "onReadyForSpeech");
         }
@@ -107,34 +166,52 @@ public class MainActivity extends ActionBarActivity {
         public void onError(int error) {
             Log.d(TAG,  "error " +  error);
             mText.setText("error " + error);
-        }
-        public void onDestroy(){
-            if(sr!=null) {
-                sr.destroy();
+            if(AppStatus.isActivityVisible()) {
+                sr.startListening(intent);
             }
         }
         public void onResults(Bundle results) {
             String str = new String();
-            Log.d(TAG, "onResults " + results);
             ArrayList data = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             for (int i = 0; i < data.size(); i++) {
                 Log.d(TAG, "result " + data.get(i));
                 str += data.get(i);
             }
             String strings = str.toLowerCase();
-            if(strings.contains("lumos") || strings.contains("loomis") || strings.contains("luminous")) {
+            if(strings.contains("lumos") || strings.contains("loomis") || strings.contains("luminous")
+                    || strings.contains("numerous") || strings.contains("animals") || strings.contains("louis")
+                    || strings.contains("nomas") || strings.contains("numbers") || strings.contains("lomas")) {
                 turnOnFlash(mText);
             }
             if(strings.contains("knox") || strings.contains("nox") || strings.contains("knocks")) {
                 turnOffFlash(mText);
             }
             mText.setText("results: " + String.valueOf(data.size()) + str);
+            if(AppStatus.isActivityVisible()) {
+                sr.startListening(intent);
+            }
         }
         public void onPartialResults(Bundle partialResults) {
             Log.d(TAG, "onPartialResults");
         }
         public void onEvent(int eventType, Bundle params) {
             Log.d(TAG, "onEvent " + eventType);
+        }
+    }
+
+    static class AppStatus {
+        private static boolean activityVisible;
+
+        public static boolean isActivityVisible() {
+            return activityVisible;
+        }
+
+        public static void activityResumed() {
+            activityVisible = true;
+        }
+
+        public static void activityPaused() {
+            activityVisible = false;
         }
     }
 }
