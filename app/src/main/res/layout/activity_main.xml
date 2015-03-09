@@ -5,42 +5,4 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
 
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Linterna On"
-        android:id="@+id/linterna_on"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"
-        android:onClick="turnOnFlash"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Linterna Off"
-        android:id="@+id/linterna_off"
-        android:layout_below="@+id/linterna_on"
-        android:layout_alignLeft="@+id/linterna_on"
-        android:layout_alignStart="@+id/linterna_on"
-        android:onClick="turnOffFlash"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Speak"
-        android:id="@+id/btn_speak"
-        android:layout_below="@+id/linterna_off"
-        android:layout_alignLeft="@+id/linterna_on"
-        android:layout_alignStart="@+id/linterna_off"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Speak"
-        android:id="@+id/textView1"
-        android:layout_below="@+id/btn_speak"
-        android:layout_alignLeft="@+id/btn_speak"
-        android:layout_alignStart="@+id/btn_speak" />
-
 </RelativeLayout>
